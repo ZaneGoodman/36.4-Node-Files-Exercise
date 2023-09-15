@@ -1,23 +1,31 @@
 const fs = require("fs");
 const axios = require("axios");
 const isUrl = require("is-url");
-const arg = process.argv[2];
+const firstArg = process.argv[2];
 
-outputDataToFiles();
-// appendToFile("one.txt", "this is update");
-function checkArgType(arg) {
+checkArgType();
+
+function checkArgType() {
+  if (firstArg === "--out") {
+    let outputArg = process.argv[4];
+    checkIfFileOrURL(outputArg);
+  } else {
+    checkIfFileOrURL(firstArg);
+  }
+}
+
+function checkIfFileOrURL(arg) {
   fs.lstat(arg, async (err, stats) => {
     try {
       if (isUrl(arg)) {
-        let data = await webCat(arg);
+        await webCat(arg);
         console.log("This is a URL");
-
-        return data;
+        return;
       }
       if (stats.isFile()) {
-        let data = cat(arg);
-        console.log("This is a File", data);
-        return data;
+        cat(arg);
+        console.log("This is a File");
+        return;
       }
     } catch {
       console.log(err);
@@ -31,32 +39,28 @@ function cat(arg) {
       console.log("ERROR", err);
       process.kill(1);
     }
-    console.log("DATA : ", data);
-    return data;
+
+    if (firstArg === "--out") {
+      outputDataToFiles(data);
+    } else {
+      console.log("DATA : ", data);
+    }
   });
 }
 
 async function webCat(url) {
   response = await axios.get(url);
-  console.log(response.data);
-  return response.data;
+
+  if (firstArg === "--out") {
+    outputDataToFiles(response.data);
+  } else {
+    console.log(response.data);
+  }
 }
 
-// // fs.appendFile('podem.txt', "\nAPPEND ME!!!", 'utf8', err => {
-// //   if (err) {
-// //     console.log("ERROR!!!", err)
-// //     process.kill(1)
-// //   }
-// //   console.log("IT WORKED!")
-// // })
-
-// function readFile() {
-//   if (process.argv[4]) {
-//     fs.readFile(process.argv[4]);
-//   }
-// }
-
 function appendToFile(file, content) {
+  console.log(content);
+
   fs.appendFile(file, content, "utf8", (err) => {
     if (err) {
       console.log("ERROR", err);
@@ -66,14 +70,8 @@ function appendToFile(file, content) {
   });
 }
 
-function outputDataToFiles() {
-  if (arg === "--out") {
-    let output = process.argv[4];
-    let addToFile = process.argv[3];
-    let outputData = String(checkArgType(output));
+function outputDataToFiles(data) {
+  let addToFile = process.argv[3];
 
-    appendToFile(addToFile, outputData);
-  } else {
-    checkArgType(arg);
-  }
+  appendToFile(addToFile, data);
 }
